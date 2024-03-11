@@ -233,6 +233,8 @@ read_phantom_MRiLab
 CurrentModule = KomaMRICore
 ```
 
+**KomaMRICore** uses the Julia packages **Functors.jl** and **Adapt.jl**, which allows us to easily convert large nested structures. This could be used to send a custom type to the GPU (`gpu`), back to the CPU (`cpu`), change its floating point precision (`f32` and `f64`), etc. Four custom types in Koma implement these features: `Phantom`, `DiscreteSequence`, `Spinor`, and `Mag`. More information about these conversion operations is presented below.
+
 ### `f32`
 ```@docs
 f32

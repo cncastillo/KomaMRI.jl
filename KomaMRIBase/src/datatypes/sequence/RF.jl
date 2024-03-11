@@ -3,18 +3,19 @@
     rf = RF(A, T, Δf)
     rf = RF(A, T, Δf, delay)
 
-The RF struct represents a Radio Frequency excitation of a sequence event.
+The RF struct represents a Radio Frequency excitation event of a sequence.
 
 # Arguments
 - `A`: (`::Complex`, `[T]`) RF complex amplitud modulation (AM), ``B_1(t) = |B_1(t)|
     e^{i\\phi(t)} = B_{1}(t) + iB_{1,y}(t) ``
 - `T`: (`::Real`, [`s`]) RF duration
-- `Δf`: (`::Real` or `::Vector`, [`Hz`]) RF frequency difference with respect to the Larmor frequency.
-    This can be a number but also a vector to represent frequency modulated signals (FM).
+- `Δf`: (`::Real` or `::Vector`, [`Hz`]) RF frequency difference with respect to the Larmor
+    frequency. This can be a number but also a vector to represent frequency modulated
+    signals (FM).
 - `delay`: (`::Real`, [`s`]) RF delay time
 
 # Returns
-- `rf`: (`::RF`) the RF struct
+- `rf`: (`::RF`) RF struct
 
 # Examples
 ```julia-repl
@@ -39,17 +40,7 @@ mutable struct RF
     end
 end
 
-"""
-    str = show(io::IO, x::RF)
-
-Displays information about the RF struct `x` in the julia REPL.
-
-# Arguments
-- `x`: (`::RF`) RF struct
-
-# Returns
-- `str`: (`::String`) output string message
-"""
+# Display on the REPL
 Base.show(io::IO, x::RF) = begin
 	r(x) = round.(x,digits=4)
 	compact = get(io, :compact, false)
@@ -66,16 +57,16 @@ end
     y = getproperty(x::Vector{RF}, f::Symbol)
     y = getproperty(x::Matrix{RF}, f::Symbol)
 
-Overloads Base.getproperty(). It is meant to access properties of the RF vector `x`
-directly without the need to iterate elementwise.
+Overloads Base.getproperty(). This function is designed to directly access properties of the
+RF array x without the need for elementwise iteration.
 
 # Arguments
 - `x`: (`::Vector{RF}` or `::Matrix{RF}`) vector or matrix of RF structs
 - `f`: (`::Symbol`, opts: [`:A`, `:Bx`, `:By`, `:T`, `:Δf`, `:delay` and `:dur`]) input
-    symbol that represents a property of the vector or matrix of RF structs
+    symbol representing a property of the vector or matrix of RF structs
 
 # Returns
-- `y`: (`::Vector{Any}` or `::Matrix{Any}`) vector with the property defined by the
+- `y`: (`::Vector{Any}` or `::Matrix{Any}`) vector containing the property defined by the
     symbol `f` for all elements of the RF vector or matrix `x`
 """
 getproperty(x::Vector{RF}, f::Symbol) = getproperty.(x,f)
@@ -108,37 +99,34 @@ size(r::RF, i::Int64) = 1 #To fix [r;r;;] concatenation of Julia 1.7.3
 *(α::Complex{T}, x::RF) where {T<:Real} = RF(α*x.A,x.T,x.Δf,x.delay)
 
 """
-    y = dur(x::RF)
-    y = dur(x::Array{RF,1})
-    y = dur(x::Array{RF,2})
+    time = dur(rf::RF)
+    time = dur(rf::Array{RF,1})
+    time = dur(rf::Array{RF,2})
 
-Duration time in [s] of RF struct or RF array.
+Duration time in seconds of an RF struct or RF array.
 
 # Arguments
-- `x`: (`::RF` or `::Array{RF,1}` or `::Array{RF,2}`) RF struct or RF array
+- `rf`: (`::RF` or `::Array{RF,1}` or `::Array{RF,2}`) RF struct or RF array
 
 # Returns
-- `y`: (`::Float64`, [`s`]) duration of the RF struct or RF array
+- `time`: (`::Real`, [`s`]) duration of the RF struct or RF array
 """
 dur(x::RF) = sum(x.T)
 dur(x::Array{RF,1}) = sum(sum(x[i].T) for i=1:size(x,1))
 dur(x::Array{RF,2}) = maximum(sum([sum(x[i,j].T) for i=1:size(x,1),j=1:size(x,2)],dims=2))
 
 """
-    rf = RF_fun(f::Function, T::Real, N::Int64)
+    rf = RF(f::Function, T::Real, N::Int64)
 
-Generate an RF sequence with amplitudes sampled from a function waveform.
-
-!!! note
-    This function is not being used in this KomaMRI version.
+Generates an RF sequence with amplitudes sampled from a function waveform.
 
 # Arguments
-- `f`: (`::Function`, [`T`]) function for the RF amplitud waveform
+- `f`: (`::Function`, [`T`]) function representing the RF amplitude waveform
 - `T`: (`::Real`, [`s`]) duration of the RF pulse
-- `N`: (`::Int64`) number of samples of the RF pulse
+- `N`: (`::Int64`) number of samples in the RF pulse
 
 # Returns
-- `rf`:(`::RF`) RF struct with amplitud defined by the function `f`
+- `rf`:(`::RF`) RF struct with amplitude defined by the function `f`
 """
 RF(f::Function, T::Real, N::Int64=301; delay::Real=0, Δf=0) = begin
 	t = range(0,T;length=N)
@@ -147,15 +135,15 @@ RF(f::Function, T::Real, N::Int64=301; delay::Real=0, Δf=0) = begin
 end
 
 """
-    α = get_flip_angle(x::RF)
+    α = get_flip_angle(rf::RF)
 
 Calculates the flip angle α [deg] of an RF struct. α = γ ∫ B1(τ) dτ
 
 # Arguments
-- `x`: (`::RF`) RF struct
+- `rf`: (`::RF`) RF struct
 
 # Returns
-- `α`: (`::Int64`, `[deg]`) flip angle RF struct `x`
+- `α`: (`::Real`, `[deg]`) flip angle RF struct `rf`
 """
 get_flip_angle(x::RF) = begin
 	A, NA, T, NT = x.A, length(x.A), x.T, length(x.T)
@@ -165,16 +153,16 @@ get_flip_angle(x::RF) = begin
 end
 
 """
-    t = get_RF_center(x::RF)
+    time = get_RF_center(rf::RF)
 
-Calculates the time where is the center of the RF pulse `x`. This calculation includes the
+Calculates the time where is the center of the RF pulse `rf`. This calculation includes the
 RF delay.
 
 # Arguments
-- `x`: (`::RF`) RF struct
+- `rf`: (`::RF`) RF struct
 
 # Returns
-- `t`: (`::Int64`, `[s]`) time where is the center of the RF pulse `x`
+- `time`: (`::Real`, `[s]`) time where is the center of the RF pulse `rf`
 """
 get_RF_center(x::RF) = begin
 	A, NA, T, NT, delay = x.A, length(x.A), x.T, length(x.T), x.delay
