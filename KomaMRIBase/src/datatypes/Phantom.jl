@@ -47,12 +47,8 @@ julia> obj.ρ
     T2s::AbstractVector{T} = ones(eltype(x), size(x)) * 1_000_000
     #Off-resonance related
     Δw::AbstractVector{T} = zeros(eltype(x), size(x))
-    #χ::Vector{SusceptibilityModel}
-    #Diffusion
-    Dλ1::AbstractVector{T} = zeros(eltype(x), size(x))
-    Dλ2::AbstractVector{T} = zeros(eltype(x), size(x))
-    Dθ::AbstractVector{T}  = zeros(eltype(x), size(x))
-    #Diff::Vector{DiffusionModel}  #Diffusion map
+    #EXPERIMENTAL: Coils
+    coil_sens::AbstractVector{T} = ones(eltype(x), length(x))
     #Motion
     motion::MotionModel{T} = NoMotion{eltype(x)}()
 end
@@ -123,7 +119,7 @@ end
 """
     obj = heart_phantom(...)
 
-Heart-like LV 2D phantom. The variable `circumferential_strain` and `radial_strain` are for streching (if positive) 
+Heart-like LV 2D phantom. The variable `circumferential_strain` and `radial_strain` are for streching (if positive)
 or contraction (if negative). `rotation_angle` is for rotation.
 
 # Arguments
@@ -159,11 +155,11 @@ function heart_phantom(
     ring = ⚪(R) .- ⚪(r)
     ρ = ⚪(r) .+ 0.9 * ring #proton density
     # Diffusion tensor model
-    D = 2e-9 #Diffusion of free water m2/s
-    D1, D2 = D, D / 20
-    Dλ1 = D1 * ⚪(R) #Diffusion map
-    Dλ2 = D1 * ⚪(r) .+ D2 * ring #Diffusion map
-    Dθ = atan.(x, -y) .* ring #Diffusion map
+    # D = 2e-9 #Diffusion of free water m2/s
+    # D1, D2 = D, D / 20
+    # Dλ1 = D1 * ⚪(R) #Diffusion map
+    # Dλ2 = D1 * ⚪(r) .+ D2 * ring #Diffusion map
+    # Dθ = atan.(x, -y) .* ring #Diffusion map
     T1 = (1400 * ⚪(r) .+ 1026 * ring) * 1e-3 #Myocardial T1
     T2 = (308 * ⚪(r) .+ 42 * ring) * 1e-3 #T2 map [s]
     # Generating Phantoms
@@ -174,9 +170,9 @@ function heart_phantom(
         ρ=ρ[ρ .!= 0],
         T1=T1[ρ .!= 0],
         T2=T2[ρ .!= 0],
-        Dλ1=Dλ1[ρ .!= 0],
-        Dλ2=Dλ2[ρ .!= 0],
-        Dθ=Dθ[ρ .!= 0],
+        # Dλ1=Dλ1[ρ .!= 0],
+        # Dλ2=Dλ2[ρ .!= 0],
+        # Dθ=Dθ[ρ .!= 0],
         motion=SimpleMotion(
             PeriodicHeartBeat(;
                 period=period,
@@ -225,7 +221,7 @@ julia> plot_phantom_map(obj, :ρ)
 ```
 """
 function brain_phantom2D(; axis="axial", ss=4, us=1)
-    # check and filter input    
+    # check and filter input
     ssx, ssy, ssz, usx, usy, usz = check_phantom_arguments(2, ss, us)
 
     # Get data from .mat file
@@ -322,7 +318,7 @@ end
     obj = brain_phantom3D(; ss=4, us=1)
 
 Creates a three-dimentional brain Phantom struct.
-Default ss=4 sample spacing is 2 mm. Original file (ss=1) sample spacing is .5 mm. 
+Default ss=4 sample spacing is 2 mm. Original file (ss=1) sample spacing is .5 mm.
 
 # References
 - B. Aubert-Broche, D.L. Collins, A.C. Evans: "A new improved version of the realistic
@@ -349,7 +345,7 @@ julia> plot_phantom_map(obj, :ρ)
 ```
 """
 function brain_phantom3D(; ss=4, us=1, start_end=[160, 200])
-    # check and filter input    
+    # check and filter input
     ssx, ssy, ssz, usx, usy, usz = check_phantom_arguments(3, ss, us)
 
     # Get data from .mat file
@@ -473,7 +469,7 @@ julia> pelvis_phantom2D(obj, :ρ)
 ```
 """
 function pelvis_phantom2D(; ss=4, us=1)
-    # check and filter input    
+    # check and filter input
     ssx, ssy, ssz, usx, usy, usz = check_phantom_arguments(2, ss, us)
 
     # Get data from .mat file
@@ -556,7 +552,7 @@ julia> ssx, ssy, ssz, usx, usy, usz = check_phantom_arguments(3, 4, [2, 2, 2])
 ```
 """
 function check_phantom_arguments(nd, ss, us)
-    # check for valid input    
+    # check for valid input
     ssz = -9999
     usz = -9999
     if length(us) > 1 || prod(us) > 1
